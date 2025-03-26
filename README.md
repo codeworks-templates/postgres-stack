@@ -6,7 +6,7 @@ This repository allows you to customize your deployment **without modifying the 
 ## 🔑 Required GitHub Secrets
 
 | Secret | Name	| Description|
-|========|========|==========|
+|--------|--------|------------|
 | `VAULT_YML` | `VAULT_YML` | Plaintext content of the vault YAML config |
 | `SSH_USER` | `SSH_USER` | SSH login user for server |
 | `SSH_PRIVATE_KEY` | `SSH_PRIVATE_KEY` | SSH key with access
