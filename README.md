@@ -29,17 +29,37 @@ This repository allows you to customize your deployment **without modifying the 
 Contains your env secrets and config:
 
 ```yaml
+# This is an example of a vault file for Ansible group_vars
+# To keep your secrets secure create a GitHub secret named VAULT_YML
+# and store the contents of this file in it.
+# Add this file to your .gitignore to prevent it from being committed to your repository.
 env_vars:
-  POSTGRES_USER: root
-  POSTGRES_PASSWORD: rootpassword
-  APP_USER: appuser
-  APP_PASS: apppass
-  PGADMIN_DEFAULT_EMAIL: admin@yourdomain.dev
-  PGADMIN_DEFAULT_PASSWORD: securepassword
-  API_IMAGE: ghcr.io/your-org/your-api:latest
-  APP_DOMAIN: app.yourdomain.dev
-  API_DOMAIN: api.yourdomain.dev
-  PGADMIN_DOMAIN: pgadmin.yourdomain.dev
+  # Required by postgres-core
+  # These variables are used to configure the PostgreSQL database
+  POSTGRES_USER: root               # use a strong username 
+  POSTGRES_PASSWORD: rootpassword   # use a strong password
+  APP_USER: appuser                 # the remote user for connection_string
+  APP_PASS: apppass                 # use a strong password
+  
+  # Uncomment and set the following variables if you want to use pgAdmin
+  # PGADMIN_DEFAULT_EMAIL: admin@yourdomain.dev
+  # PGADMIN_DEFAULT_PASSWORD: securepassword
+
+  # Add any other environment variables your application needs here
+
+services:
+  frontend:
+    image: ghcr.io/myuser/app-frontend:latest
+    domain: app.dev.example.com
+    type: static
+  api:
+    image: ghcr.io/myuser/app-api:latest
+    domain: api.dev.example.com
+    port: 5000
+  pgadmin:
+    domain: pgadmin.dev.example.com
+    port: 80
+    type: reverse
 ```
 
 ### `templates/env.j2`
@@ -64,6 +84,23 @@ Used to automatically configure HTTPS routing for:
    - You can use the provided example as a starting point
    - DO NOT commit your actual `vault.yml` file to the repo
 3. Use the core `postgres-stack` playbook and pass this repo as the `--extra-vars` source
+
+
+## Testing without Custom DNS
+
+[nip.io](https://nip.io/) is a free service that resolves any IP address to a domain name. This allows you to test your setup without needing to configure custom DNS records.
+
+When using nip.io, you can set your domain in your service to something like:
+
+```yaml
+api:
+   image: ghcr.io/myuser/app-api:latest
+   # appname.ipaddress.nip.io
+   domain: api.123.456.789.10.nip.io
+   port: 5000
+```
+
+
 
 ---
 
