@@ -1,0 +1,52 @@
+name: Deploy Student Stack
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment (staging or prod)"
+        required: true
+        default: staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout student repo
+        uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          sudo apt update
+          sudo apt install -y ansible
+
+      - name: Write vault.yml from GitHub secret
+        run: |
+          mkdir -p ansible/group_vars/overrides
+          echo "${{ secrets.VAULT_YML }}" > ansible/group_vars/overrides/vault.yml
+
+      - name: Clone core stack repo
+        run: |
+          git clone https://github.com/codeworks-templates/postgres-core.git core-template
+          cp -r core-template/ansible/* ansible/
+          cp -r core-template/templates/* ansible/templates/
+
+      - name: Create inventory
+        run: |
+          echo "[${{ github.event.inputs.environment }}]" > inventory.ini
+          if [[ "${{ github.event.inputs.environment }}" == "staging" ]]; then
+            echo "target ansible_host=${{ secrets.STAGING_HOST }} ansible_user=${{ secrets.SSH_USER }}" >> inventory.ini
+          else
+            echo "target ansible_host=${{ secrets.PROD_HOST }} ansible_user=${{ secrets.SSH_USER }}" >> inventory.ini
+          fi
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Run Ansible playbook
+        run: |
+          ansible-playbook -i inventory.ini ansible/playbook.yml

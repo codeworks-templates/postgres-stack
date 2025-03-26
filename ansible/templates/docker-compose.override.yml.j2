@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+{% for name, svc in services.items() if 'image' in svc %}
+  {{ name }}:
+    image: {{ svc.image }}
+    restart: unless-stopped
+    {% if name != 'frontend' %}
+    ports:
+      - "{{ svc.port }}:{{ svc.port }}"
+    {% endif %}
+    networks:
+      - backend
+{% endfor %}
