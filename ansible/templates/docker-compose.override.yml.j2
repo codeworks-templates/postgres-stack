@@ -5,10 +5,14 @@ services:
   {{ name }}:
     image: {{ svc.image }}
     restart: unless-stopped
-    {% if name != 'frontend' %}
+    {% if 'port' in svc %}
     ports:
       - "{{ svc.port }}:{{ svc.port }}"
     {% endif %}
     networks:
       - backend
 {% endfor %}
+
+networks:
+  backend:
+    external: true

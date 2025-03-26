@@ -26,6 +26,7 @@ services:
     domain: api.dev.example.com
     port: 5000
   pgadmin:
+    image: dpage/pgadmin4:latest
     domain: pgadmin.dev.example.com
     port: 80
     type: reverse

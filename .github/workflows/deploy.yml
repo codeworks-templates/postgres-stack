@@ -1,4 +1,4 @@
-name: Deploy Student Stack
+name: Deploy Stack
 
 on:
   workflow_dispatch:
@@ -16,28 +16,31 @@ jobs:
       - name: Checkout student repo
         uses: actions/checkout@v4
 
-      - name: Install Ansible (fast via pip)
+      - name: Install Ansible
         run: |
           python3 -m pip install --upgrade pip
           pip install ansible
 
-      - name: Write vault.yml from GitHub secret
+      - name: Write vault.yml for environment
         run: |
-          mkdir -p ansible/group_vars/overrides
-          echo "${{ secrets.VAULT_YML }}" > ansible/group_vars/overrides/vault.yml
+          mkdir -p ansible/group_vars/${{ github.event.inputs.environment }}
+          if [ "${{ github.event.inputs.environment }}" = "prod" ]; then
+            echo "${{ secrets.VAULT_PROD }}" > ansible/group_vars/prod/vault.yml
+          elif [ "${{ github.event.inputs.environment }}" = "staging" ]; then
+            echo "${{ secrets.VAULT_STAGING }}" > ansible/group_vars/staging/vault.yml
+          fi
 
-      - name: Clone core stack repo
+      - name: Clone core infra
         run: |
           git clone https://github.com/codeworks-templates/postgres-core.git core-template
-          cp -r core-template/ansible/* ansible/
 
-      - name: Create inventory
+      - name: Create inventory.ini dynamically
         run: |
           echo "[${{ github.event.inputs.environment }}]" > inventory.ini
-          if [[ "${{ github.event.inputs.environment }}" == "staging" ]]; then
-            echo "target ansible_host=${{ secrets.STAGING_HOST }} ansible_user=${{ secrets.SSH_USER }}" >> inventory.ini
-          else
+          if [ "${{ github.event.inputs.environment }}" = "prod" ]; then
             echo "target ansible_host=${{ secrets.PROD_HOST }} ansible_user=${{ secrets.SSH_USER }}" >> inventory.ini
+          elif [ "${{ github.event.inputs.environment }}" = "staging" ]; then
+            echo "target ansible_host=${{ secrets.STAGING_HOST }} ansible_user=${{ secrets.SSH_USER }}" >> inventory.ini
           fi
 
       - name: Setup SSH
@@ -49,6 +52,6 @@ jobs:
       - name: Disable SSH host key checking
         run: echo "StrictHostKeyChecking=no" >> ~/.ssh/config
 
-      - name: Run Ansible playbook
-        run: |
-          ansible-playbook -i inventory.ini ansible/playbook.yml
+      - name: Run Ansible Playbook
+        run: ansible-playbook -i inventory.ini ansible/playbook.yml --extra-vars "deploy_env=${{ github.event.inputs.environment }}"
+
