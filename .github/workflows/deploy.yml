@@ -17,9 +17,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Ansible
-        run: |
-          sudo apt update
-          sudo apt install -y ansible
+        uses: dawidd6/action-install-ansible@v2
 
       - name: Write vault.yml from GitHub secret
         run: |
