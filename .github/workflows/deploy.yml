@@ -33,6 +33,11 @@ jobs:
       - name: Clone core infra
         run: |
           git clone https://github.com/codeworks-templates/postgres-core.git core-template
+      
+      - name: Inject student overrides into core
+        run: |
+          cp -r ansible/templates core-template/ansible/
+          cp -r ansible/group_vars core-template/ansible/
 
       - name: Create inventory.ini dynamically
         run: |
@@ -53,5 +58,6 @@ jobs:
         run: echo "StrictHostKeyChecking=no" >> ~/.ssh/config
 
       - name: Run Ansible Playbook
-        run: ansible-playbook -i inventory.ini ansible/playbook.yml --extra-vars "deploy_env=${{ github.event.inputs.environment }}"
+        run: ansible-playbook -i inventory.ini core-template/ansible/playbook.yml --extra-vars "deploy_env=${{ github.event.inputs.environment }}"
+
 
