@@ -16,8 +16,10 @@ jobs:
       - name: Checkout student repo
         uses: actions/checkout@v4
 
-      - name: Install Ansible
-        uses: dawidd6/action-install-ansible@v2
+      - name: Install Ansible (fast via pip)
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install ansible
 
       - name: Write vault.yml from GitHub secret
         run: |
