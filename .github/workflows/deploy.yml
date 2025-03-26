@@ -34,10 +34,12 @@ jobs:
         run: |
           git clone https://github.com/codeworks-templates/postgres-core.git core-template
       
-      - name: Inject student overrides into core
+      - name: Inject student templates + vault into core
         run: |
-          cp -r ansible/templates core-template/ansible/
-          cp -r ansible/group_vars core-template/ansible/
+          mkdir -p core-template/ansible/templates
+          mkdir -p core-template/ansible/group_vars
+          cp -r ansible/templates/* core-template/ansible/templates/
+          cp -r ansible/group_vars/* core-template/ansible/group_vars/
 
       - name: Create inventory.ini dynamically
         run: |
