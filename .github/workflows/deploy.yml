@@ -16,26 +16,34 @@ jobs:
       - name: Checkout student repo
         uses: actions/checkout@v4
 
-      - name: Set HOST_IP variable
-        id: vars
+      - name: Set REPO_NAME and DEPLOY_PATH
+        run: |
+          REPO_NAME=$(basename $GITHUB_REPOSITORY)
+          DEPLOY_ENV="${{ github.event.inputs.environment }}"
+          DEPLOY_PATH="${REPO_NAME}.${DEPLOY_ENV}"
+
+          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+          echo "DEPLOY_ENV=$DEPLOY_ENV" >> $GITHUB_ENV
+          echo "DEPLOY_PATH=$DEPLOY_PATH" >> $GITHUB_ENV
+
+      - name: Set HOST_IP and write vault
         run: |
           if [ "${{ github.event.inputs.environment }}" = "prod" ]; then
-            echo "HOST_IP=${{ secrets.PROD_HOST }}" >> $GITHUB_ENV
-            echo "VAULT=${{ secrets.VAULT_PROD }}" >> $GITHUB_ENV
+            HOST_IP=${{ secrets.PROD_HOST }}
+            VAULT="${{ secrets.VAULT_PROD }}"
           else
-            echo "HOST_IP=${{ secrets.STAGING_HOST }}" >> $GITHUB_ENV
-            echo "VAULT=${{ secrets.VAULT_STAGING }}" >> $GITHUB_ENV
+            HOST_IP=${{ secrets.STAGING_HOST }}
+            VAULT="${{ secrets.VAULT_STAGING }}"
           fi
+
+          echo "HOST_IP=$HOST_IP" >> $GITHUB_ENV
+          mkdir -p ansible/group_vars/${{ github.event.inputs.environment }}
+          echo "$VAULT" > ansible/group_vars/${{ github.event.inputs.environment }}/vault.yml
 
       - name: Install Ansible
         run: |
           python3 -m pip install --upgrade pip
           pip install ansible
-
-      - name: Write vault.yml for environment
-        run: |
-          mkdir -p ansible/group_vars/${{ github.event.inputs.environment }}
-          echo "$VAULT" > ansible/group_vars/${{ github.event.inputs.environment }}/vault.yml
 
       - name: Clone core infra
         run: git clone https://github.com/codeworks-templates/postgres-core.git core-template
@@ -63,9 +71,11 @@ jobs:
 
       - name: Upload stack to remote server
         run: |
-          REPO_NAME=$(basename $GITHUB_REPOSITORY)
-          scp -r core-template/* ${{ secrets.SSH_USER }}@$HOST_IP:/home/${{ secrets.SSH_USER }}/$REPO_NAME/
+          scp -r core-template/* ${{ secrets.SSH_USER }}@$HOST_IP:/home/${{ secrets.SSH_USER }}/$DEPLOY_PATH/
+
 
       - name: Run Ansible Playbook
         run: |
-          ansible-playbook -i inventory.ini core-template/ansible/playbook.yml --extra-vars "deploy_env=${{ github.event.inputs.environment }}"
+          ansible-playbook -i inventory.ini core-template/ansible/playbook.yml \
+            --extra-vars "deploy_env=$DEPLOY_ENV repo_name=$DEPLOY_PATH"
+
