@@ -1,11 +1,11 @@
 {% for name, svc in services.items() %}
 {{ svc.domain }} {
-  {% if svc.type == 'static' %}
-  root * /srv/{{ name }}
+  {% if svc.type | default('') == 'reverse' %}
+  reverse_proxy {{ name }}:{{ svc.port }}
+  {% else %}
+  root * /srv/frontend
   file_server
   try_files {path} /index.html
-  {% else %}
-  reverse_proxy {{ name }}:{{ svc.port }}
   {% endif %}
 }
 {% endfor %}
