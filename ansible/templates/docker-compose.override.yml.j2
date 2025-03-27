@@ -1,14 +1,34 @@
 version: '3.8'
 
 services:
-{% for name, svc in services.items() if 'image' in svc %}
+{% for name, svc in services.items() %}
+  {% if name not in ['postgres', 'pg_backup', 'caddy'] and 'image' in svc %}
   {{ name }}:
     image: {{ svc.image }}
     restart: unless-stopped
-{% if name != 'frontend' and svc.port is defined %}
+    {% if svc.environment is defined %}
+    environment:
+    {% for key, val in svc.environment.items() %}
+      - {{ key }}={{ val }}
+    {% endfor %}
+    {% endif %}
+    {% if svc.port is defined %}
     ports:
       - "{{ svc.port }}:{{ svc.port }}"
-{% endif %}
+    {% endif %}
+    {% if svc.volumes is defined %}
+    volumes:
+    {% for vol in svc.volumes %}
+      - {{ vol }}
+    {% endfor %}
+    {% endif %}
+    {% if svc.depends_on is defined %}
+    depends_on:
+    {% for dep in svc.depends_on %}
+      - {{ dep }}
+    {% endfor %}
+    {% endif %}
     networks:
       - backend
+  {% endif %}
 {% endfor %}

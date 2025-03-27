@@ -1,11 +1,13 @@
-{% for name, svc in services.items() %}
+{% for name, svc in services.items() if 'domain' in svc %}
 {{ svc.domain }} {
-  {% if svc.type | default('') == 'reverse' %}
-  reverse_proxy {{ name }}:{{ svc.port }}
-  {% else %}
+  {% if svc.type == 'static' %}
   root * /srv/frontend
-  file_server
+  encode zstd gzip
+  header Cache-Control "public, max-age=31536000"
   try_files {path} /index.html
+  file_server
+  {% else %}
+  reverse_proxy {{ name }}:{{ svc.port }}
   {% endif %}
 }
 {% endfor %}
