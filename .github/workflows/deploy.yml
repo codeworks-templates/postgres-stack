@@ -16,6 +16,17 @@ jobs:
       - name: Checkout student repo
         uses: actions/checkout@v4
 
+      - name: Set HOST_IP variable
+        id: vars
+        run: |
+          if [ "${{ github.event.inputs.environment }}" = "prod" ]; then
+            echo "HOST_IP=${{ secrets.PROD_HOST }}" >> $GITHUB_ENV
+            echo "VAULT=${{ secrets.VAULT_PROD }}" >> $GITHUB_ENV
+          else
+            echo "HOST_IP=${{ secrets.STAGING_HOST }}" >> $GITHUB_ENV
+            echo "VAULT=${{ secrets.VAULT_STAGING }}" >> $GITHUB_ENV
+          fi
+
       - name: Install Ansible
         run: |
           python3 -m pip install --upgrade pip
@@ -24,15 +35,10 @@ jobs:
       - name: Write vault.yml for environment
         run: |
           mkdir -p ansible/group_vars/${{ github.event.inputs.environment }}
-          if [ "${{ github.event.inputs.environment }}" = "prod" ]; then
-            echo "${{ secrets.VAULT_PROD }}" > ansible/group_vars/prod/vault.yml
-          elif [ "${{ github.event.inputs.environment }}" = "staging" ]; then
-            echo "${{ secrets.VAULT_STAGING }}" > ansible/group_vars/staging/vault.yml
-          fi
+          echo "$VAULT" > ansible/group_vars/prod/vault.yml
 
       - name: Clone core infra
-        run: |
-          git clone https://github.com/codeworks-templates/postgres-core.git core-template
+        run: git clone https://github.com/codeworks-templates/postgres-core.git core-template
       
       - name: Inject student templates + vault into core
         run: |
@@ -44,11 +50,7 @@ jobs:
       - name: Create inventory.ini dynamically
         run: |
           echo "[${{ github.event.inputs.environment }}]" > inventory.ini
-          if [ "${{ github.event.inputs.environment }}" = "prod" ]; then
-            echo "target ansible_host=${{ secrets.PROD_HOST }} ansible_user=${{ secrets.SSH_USER }}" >> inventory.ini
-          elif [ "${{ github.event.inputs.environment }}" = "staging" ]; then
-            echo "target ansible_host=${{ secrets.STAGING_HOST }} ansible_user=${{ secrets.SSH_USER }}" >> inventory.ini
-          fi
+          echo "target ansible_host=$HOST_IP ansible_user=${{ secrets.SSH_USER }}" >> inventory.ini
 
       - name: Setup SSH
         run: |
@@ -59,7 +61,11 @@ jobs:
       - name: Disable SSH host key checking
         run: echo "StrictHostKeyChecking=no" >> ~/.ssh/config
 
+      - name: Upload stack to remote server
+        run: |
+          REPO_NAME=$(basename $GITHUB_REPOSITORY)
+          scp -r core-template/* ${{ secrets.SSH_USER }}@$HOST_IP:/home/${{ secrets.SSH_USER }}/$REPO_NAME/
+
       - name: Run Ansible Playbook
-        run: ansible-playbook -i inventory.ini core-template/ansible/playbook.yml --extra-vars "deploy_env=${{ github.event.inputs.environment }}"
-
-
+        run: |
+          ansible-playbook -i inventory.ini core-template/ansible/playbook.yml --extra-vars "deploy_env=${{ github.event.inputs.environment }}"
