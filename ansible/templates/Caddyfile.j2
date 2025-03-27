@@ -1,6 +1,6 @@
 {% for name, svc in services.items() if 'domain' in svc %}
 {{ svc.domain }} {
-  {% if svc.type == 'static' %}
+  {% if svc.get('type','') == 'static' %}
   root * /srv/frontend
   encode zstd gzip
   header Cache-Control "public, max-age=31536000"

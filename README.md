@@ -117,99 +117,38 @@ api:
 ```
 
 
-## Optional Services
+### 📦 `vault.yml` Example: Enable Monitoring with Exporters
 
-You can include optional services like Grafana, Prometheus, and pgAdmin by adding them to your `vault.yml`. These services are conditionally rendered in the final `docker-compose.override.yml` and proxied by Caddy **only if a `domain` is defined**.
-
-### Grafana + Prometheus Example
+To enable full observability with Prometheus and Grafana, including required exporters, add the following to your `vault.yml`:
 
 ```yaml
 services:
+  node_exporter:
+    image: prom/node-exporter
+    port: 9100
+
+  postgres_exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter
+    port: 9187
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
+
   prometheus:
     image: prom/prometheus
+    domain: prometheus.127.0.0.1.nip.io
     port: 9090
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
 
   grafana:
     image: grafana/grafana
+    domain: grafana.127.0.0.1.nip.io
     port: 3000
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
-    volumes:
-      - grafana_data:/var/lib/grafana
-    depends_on:
-      - prometheus
-    domain: grafana.{{YOUR_IP}}.nip.io
-    type: reverse
 ```
 
-### PG_Admin
+- Exporters **do not** expose web-accessible domains (for security), but are available internally to Prometheus.
+- These services are conditionally included only if defined in `vault.yml`.
+- Make sure `postgres_exporter` has correct credentials and access to your database.
 
-To include pgAdmin for managing your PostgreSQL database, add the following to your `vault.yml`:
+Access:
+- 🔍 Prometheus: [http://prometheus.127.0.0.1.nip.io](http://prometheus.127.0.0.1.nip.io)
+- 📊 Grafana: [http://grafana.127.0.0.1.nip.io](http://grafana.127.0.0.1.nip.io) (default login: `admin` / `admin`)
 
-```yaml
-services:
-  pgadmin:
-    image: dpage/pgadmin4
-    port: 80
-    domain: pgadmin.{{YOUR_IP}}.nip.io
-    type: reverse
-```
-
-### Notes
-
-- Services **must include both a `domain` and `type: reverse`** to be exposed through Caddy.
-- If `type` is omitted or invalid, the service is ignored in the Caddyfile.
-- Internal-only services (like the database, backup, or exporters) are never exposed unless explicitly configured.
-- You can use [nip.io](https://nip.io) or similar dynamic DNS providers for easy local development using IP-based hostnames.
-
-### Preview: Caddyfile Output
-
-When using the example above, your generated Caddyfile will look like:
-
-```caddyfile
-prometheus.54.214.79.127.nip.io {
-  reverse_proxy prometheus:9090
-}
-
-grafana.54.214.79.127.nip.io {
-  reverse_proxy grafana:3000
-}
-
-pgadmin.54.214.79.127.nip.io {
-  reverse_proxy pgadmin:80
-}
-```
-
-## Schema Hint (optional)
-
-To help guide students, you can optionally share this as a sample `vault.schema.yml`:
-
-```yaml
-services:
-  type: object
-  patternProperties:
-    "^[a-zA-Z0-9_-]+$":
-      type: object
-      required: [image, port]
-      properties:
-        image:
-          type: string
-        domain:
-          type: string
-        port:
-          type: number
-        type:
-          type: string
-          enum: [reverse]
-        env:
-          type: object
-```
-
-
-
----
-
-Let your vault do the talking 👏
