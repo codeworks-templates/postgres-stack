@@ -52,8 +52,11 @@ jobs:
         run: |
           mkdir -p core-template/ansible/templates
           mkdir -p core-template/ansible/group_vars
-          cp -r ansible/templates/* core-template/ansible/templates/
-          cp -r ansible/group_vars/* core-template/ansible/group_vars/
+          cp -r ansible/templates/. core-template/ansible/templates/
+          cp -r ansible/group_vars/. core-template/ansible/group_vars/
+
+      - name: Debug - Check copied template files
+        run: ls -la core-template/ansible/templates
 
       - name: Create inventory.ini dynamically
         run: |
