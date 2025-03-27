@@ -45,7 +45,6 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install ansible
       
-
       - name: Clone core infra
         run: git clone https://github.com/codeworks-templates/postgres-core.git core-template
       
@@ -55,9 +54,6 @@ jobs:
           mkdir -p core-template/ansible/group_vars
           cp -r ansible/templates/. core-template/ansible/templates/
           cp -r ansible/group_vars/. core-template/ansible/group_vars/
-
-      - name: Install Ansible collections 📦
-        run: ansible-galaxy collection install -r core-template/ansible/requirements.yml -p ~/.ansible/collections
 
       - name: Create inventory.ini 🗃️
         run: |
