@@ -9,10 +9,14 @@ env_vars:
   POSTGRES_PASSWORD: rootpassword   # use a strong password
   APP_USER: appuser                 # the remote user for connection_string
   APP_PASS: apppass                 # use a strong password
+  # S3 Bucket for backups
+  # Uncomment and set the following variables if you want to use S3 for backups
+  # S3_BUCKET: your-s3-bucket-name 
   
   # Uncomment and set the following variables if you want to use pgAdmin
   # PGADMIN_DEFAULT_EMAIL: admin@yourdomain.dev
   # PGADMIN_DEFAULT_PASSWORD: securepassword
+
 
   # Add any other environment variables your application needs here
 

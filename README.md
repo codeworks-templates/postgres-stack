@@ -40,6 +40,9 @@ env_vars:
   POSTGRES_PASSWORD: rootpassword   # use a strong password
   APP_USER: appuser                 # the remote user for connection_string
   APP_PASS: apppass                 # use a strong password
+  # S3 Bucket for backups
+  # Uncomment and set the following variables if you want to use S3 for backups
+  # S3_BUCKET: your-s3-bucket-name 
   
   # Uncomment and set the following variables if you want to use pgAdmin
   # PGADMIN_DEFAULT_EMAIL: admin@yourdomain.dev
@@ -57,10 +60,23 @@ services:
     domain: api.dev.example.com
     port: 5000
   pgadmin:
+    image: dpage/pgadmin4:latest
     domain: pgadmin.dev.example.com
     port: 80
     type: reverse
 ```
+
+### Enable DB Backups to S3
+- To enable S3 backups, uncomment the `S3_BUCKET` variable and set it to your bucket name.
+- You will need to attach an IAM role to your EC2 instance with permissions to write to the S3 bucket.
+
+1. Go to EC2 > Instances.
+2. Select your instance.
+3. `Actions > Security > Modify IAM Role.`
+4. Choose an existing IAM Role (or create a new one with S3 access).
+  - If you don’t have a role yet: Create one in `IAM > Roles` 
+  - Use EC2 as the trusted entity
+  - Attach the `AmazonS3FullAccess` (or a more limited policy if you prefer)
 
 ### `templates/env.j2`
 
