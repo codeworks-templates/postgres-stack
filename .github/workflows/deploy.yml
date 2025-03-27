@@ -44,6 +44,9 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           pip install ansible
+      
+      - name: Install required Ansible collections
+        run: ansible-galaxy collection install community.general
 
       - name: Clone core infra
         run: git clone https://github.com/codeworks-templates/postgres-core.git core-template

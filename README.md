@@ -80,7 +80,7 @@ services:
 
 ### `templates/env.j2`
 
-Creates a `.env` file used by Compose (you shouldn't need to edit this).
+Creates a `.env` file used by Compose. If you add any new environment variables to your `vault.yml`, make sure to add them here as well.
 
 ### `templates/docker-compose.override.yml.j2`
 
