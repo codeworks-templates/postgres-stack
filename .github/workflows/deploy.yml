@@ -45,28 +45,26 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install ansible
       
-      - name: Install required Ansible collections
-        run: ansible-galaxy collection install community.general
 
       - name: Clone core infra
         run: git clone https://github.com/codeworks-templates/postgres-core.git core-template
       
-      - name: Inject student templates + vault into core
+      - name: Inject overrides into core 💉
         run: |
           mkdir -p core-template/ansible/templates
           mkdir -p core-template/ansible/group_vars
           cp -r ansible/templates/. core-template/ansible/templates/
           cp -r ansible/group_vars/. core-template/ansible/group_vars/
 
-      - name: Debug - Check copied template files
-        run: ls -la core-template/ansible/templates
+      - name: Install Ansible collections 📦
+        run: ansible-galaxy collection install -r core-template/ansible/requirements.yml -p ~/.ansible/collections
 
-      - name: Create inventory.ini dynamically
+      - name: Create inventory.ini 🗃️
         run: |
           echo "[${{ github.event.inputs.environment }}]" > inventory.ini
           echo "target ansible_host=$HOST_IP ansible_user=${{ secrets.SSH_USER }}" >> inventory.ini
 
-      - name: Setup SSH
+      - name: Setup SSH keys 🔑
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
@@ -75,12 +73,12 @@ jobs:
       - name: Disable SSH host key checking
         run: echo "StrictHostKeyChecking=no" >> ~/.ssh/config
 
-      - name: Upload stack to remote server
+      - name: Upload stack to remote server ☁️
         run: |
           scp -r core-template/* ${{ secrets.SSH_USER }}@$HOST_IP:/home/${{ secrets.SSH_USER }}/$DEPLOY_PATH/
 
 
-      - name: Run Ansible Playbook
+      - name: Run Ansible Playbook 📔
         run: |
           ansible-playbook -i inventory.ini core-template/ansible/playbook.yml \
             --extra-vars "deploy_env=$DEPLOY_ENV repo_name=$DEPLOY_PATH"
