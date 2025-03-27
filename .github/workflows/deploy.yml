@@ -50,9 +50,7 @@ jobs:
       
       - name: Inject overrides into core 💉
         run: |
-          mkdir -p core-template/ansible/templates
           mkdir -p core-template/ansible/group_vars
-          cp -r ansible/templates/. core-template/ansible/templates/
           cp -r ansible/group_vars/. core-template/ansible/group_vars/
 
       - name: Create inventory.ini 🗃️
